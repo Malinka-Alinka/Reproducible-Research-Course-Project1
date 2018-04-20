@@ -1,0 +1,105 @@
+**Analysis of the results of activity monitoring**
+===============================================================
+
+### Introduction
+
+It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the “quantified self” movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
+
+This project makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day. 
+
+
+#### *1. Loading and preprocessing the data*
+
+Reading the data from the “activity.csv”
+
+```{r}
+library("data.table")
+library(ggplot2)
+
+data <- read.csv("activity.csv", header = TRUE, sep = ",", na.strings = "NA")
+```
+#### *2.  Looking at a summary for the dataset using “summary” and “str” methods*
+
+```{r}
+summary(data)
+```
+
+```{r}
+str(data)
+```
+
+Let's check the dimensions 
+
+```{r}
+dim(data)
+```
+
+#### *3. Looking at the few first rows of the dataset*
+
+```{r}
+head(data)
+```
+
+#### *4. Calculate the total number of steps taken per day*
+
+```{r}
+stepsByDay <- tapply(data$steps, data$date, sum, na.rm=TRUE)
+```
+
+#### *5. Make a histogram of the total number of steps taken each day*
+
+```{r}
+hist(stepsByDay, main = "Histogram of total number of steps per day", xlab = "Steps", ylab = "Frequency")
+```
+
+#### *6. Calculate and report the mean and median total number of steps taken per day*
+
+```{r}
+summary(stepsByDay)
+
+```
+
+#### *7. What is the average daily activity pattern?* 
+
+Make a time series plot (i.e. type = “l”) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+```{r}
+avg_steps_per_interval <- aggregate(steps ~ interval, data, mean)
+```
+
+Calculate average steps per day for all intervals 
+
+```{r}
+avg_steps_per_day <- aggregate(steps ~ date, data, mean)
+```
+
+Plot the time series with appropriate labels and heading
+
+```{r}
+plot(avg_steps_per_interval$interval, avg_steps_per_interval$steps, type = "l", col = 4, main = "Average number of steps by Interval", xlab = "Time Intervals", ylab = "Average number of steps")
+```
+
+#### *8. Imputing missing values* 
+
+```{r}
+missing_dt <- data[is.na(data$steps),]
+length(missing_dt$steps)
+```
+
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+```{r}
+activityDtImptd <- data
+activityDtImptd$dateType <- ifelse(as.POSIXlt(activityDtImptd$date)$wday %in% c(0,6), "Weekend", "Weekday")
+```
+
+#### *9. Histogram of the total number of steps taken each day after missing values are imputed*
+
+```{r}
+averaged_ActvtDtImptd <- aggregate(steps ~ interval + dateType, data=activityDtImptd, mean)
+ggplot(averaged_ActvtDtImptd, aes(interval, steps, color = steps)) + 
+    geom_line() + 
+    facet_grid(dateType ~ .) +
+    xlab("5-minute interval") + 
+    ylab("Avarage number of steps")
+```
